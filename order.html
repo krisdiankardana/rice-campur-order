@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rice Campur – Pesan Online</title>
+<style>
+:root{--bg:#f6efe6;--ink:#2a1a17;--muted:#7a655d;--red:#a21c24;--gold:#f2b705;--card:#fffaf3;--line:#e3d5c4;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1d1210;--ink:#f6e9dc;--muted:#b9a193;--card:#2a1917;--line:#4a3029}}
+:root[data-theme="dark"]{--bg:#1d1210;--ink:#f6e9dc;--muted:#b9a193;--card:#2a1917;--line:#4a3029}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Georgia,"Times New Roman",serif;line-height:1.5}
+header{background:var(--red);color:#fff;padding:28px 20px 24px;text-align:center}
+header h1{margin:0;font-size:2rem;letter-spacing:.02em}
+header p{margin:6px 0 0;font-size:.95rem;opacity:.9}
+main{max-width:640px;margin:0 auto;padding:20px 16px 140px}
+h2{font-size:1.15rem;margin:28px 0 4px}
+.sub{color:var(--muted);font-size:.85rem;margin:0 0 12px}
+.item{display:flex;gap:12px;align-items:center;justify-content:space-between;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:10px}
+.item b{display:block;font-weight:600}
+.item span{color:var(--muted);font-size:.9rem}
+.qty{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.qty button{width:36px;height:36px;border-radius:50%;border:1px solid var(--red);background:transparent;color:var(--red);font-size:1.2rem;cursor:pointer}
+.qty button.add{background:var(--red);color:#fff}
+.qty output{min-width:18px;text-align:center}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+#bar{position:fixed;left:0;right:0;bottom:0;background:var(--red);color:#fff;padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));display:flex;justify-content:space-between;align-items:center;gap:12px}
+#bar button{background:var(--gold);color:#2a1a17;border:0;border-radius:8px;padding:12px 18px;font:600 1rem Georgia,serif;cursor:pointer}
+#bar button:disabled{opacity:.5}
+dialog{border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink);width:min(92vw,520px);padding:20px;max-height:90vh;overflow:auto}
+dialog::backdrop{background:rgba(0,0,0,.55)}
+label{display:block;margin:12px 0 4px;font-size:.9rem}
+input,textarea{width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);font:1rem Georgia,serif}
+.row{display:flex;gap:8px}
+.row label{flex:1;display:flex;gap:6px;align-items:center;margin:8px 0;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--card)}
+.row input{width:auto}
+.line{display:flex;justify-content:space-between;font-size:.95rem;padding:3px 0}
+.total{border-top:1px solid var(--line);margin-top:8px;padding-top:8px;font-weight:700}
+.send{width:100%;margin-top:16px;background:var(--red);color:#fff;border:0;border-radius:8px;padding:14px;font:600 1rem Georgia,serif;cursor:pointer}
+.link{background:none;border:0;color:var(--muted);margin-top:8px;width:100%;cursor:pointer;font:inherit}
+.err{color:var(--red);font-size:.85rem;min-height:1.2em;margin-top:8px}
+</style>
+</head>
+<body>
+<header><h1>Rice Campur</h1><p>Pesan chicken rice langsung, kami konfirmasi lewat WhatsApp.</p></header>
+<main id="menu"></main>
+<div id="bar"><div><div id="count">Keranjang kosong</div><strong id="sum">Rp 0</strong></div><button id="open" disabled>Lihat pesanan</button></div>
+
+<dialog id="dlg">
+<h2 style="margin-top:0">Pesanan Anda</h2>
+<div id="lines"></div>
+<label for="nm">Nama</label><input id="nm" autocomplete="name">
+<label for="ph">Nomor WhatsApp</label><input id="ph" inputmode="tel" autocomplete="tel">
+<div class="row"><label><input type="radio" name="m" value="Ambil di tempat" checked>Ambil di tempat</label><label><input type="radio" name="m" value="Antar">Antar</label></div>
+<div id="addrw" hidden><label for="rn">Nama penerima</label><input id="rn" autocomplete="off"><label for="rt">Nomor telepon penerima</label><input id="rt" inputmode="tel" autocomplete="off"><label for="ad">Alamat pengantaran</label><textarea id="ad" rows="2"></textarea><label>Waktu berangkat dari outlet</label><div class="row"><label><input type="radio" name="tm" value="Segera" checked>Segera</label><label><input type="radio" name="tm" value="Jadwalkan">Pilih jadwal</label></div><div id="dtw" hidden><label for="dt">Tanggal & jam berangkat</label><input id="dt" type="datetime-local"></div></div>
+<label for="nt">Catatan (opsional)</label><textarea id="nt" rows="2" placeholder="Contoh: sambal dipisah"></textarea>
+<div class="err" id="err" role="alert"></div>
+<div id="fb" hidden><p class="sub">Jika WhatsApp tidak terbuka otomatis, ketuk tombol di bawah. Atau salin pesanan dan kirim manual ke +62 812 90 800 900.</p><a id="wl" class="send" style="display:block;text-align:center;text-decoration:none" href="#" target="_top">Buka WhatsApp</a><textarea id="mt" rows="6" readonly style="margin-top:10px"></textarea><button class="link" id="cp" type="button" style="color:var(--red)">Salin pesanan</button></div>
+<button class="send" id="send">Kirim pesanan via WhatsApp</button>
+<button class="link" id="close">Kembali ke menu</button>
+</dialog>
+
+<script>
+var WA="6281290800900";
+var MENU=[
+{t:"Paket Hainanese Chicken Rice",s:"Nasi Hainan, ayam kukus, telur kecap omega 3, kecap, sambal, dan kuah",i:[
+ {id:"p1",n:"Ayam Kampung Premium",p:80000},{id:"p3",n:"Ayam Kampung Premium + Char Siu Pork Belly",p:80000},{id:"p2",n:"Ayam Probiotik",p:60000},{id:"p4",n:"Ayam Probiotik + Char Siu Pork Belly",p:70000}]},
+{t:"A la carte",s:"",i:[
+ {id:"a1",n:"1/2 Ekor Ayam Kampung Premium Kukus",p:150000},
+ {id:"a2",n:"1/2 Ekor Ayam Probiotik Kukus",p:95000},
+ {id:"a3",n:"Char Siu Pork Belly",p:70000},
+ {id:"a9",n:"Telur Tim Kukus dengan Babi Cincang",p:50000},
+ {id:"a4",n:"Nasi Hainan 600 gr",p:45000},
+ {id:"a8",n:"Nasi Hainan 200 gr",p:15000},
+ {id:"a5",n:"Telur Kecap Omega 3",p:10000},
+ {id:"a6",n:"Sambal 35 gr",p:5000},
+ {id:"a7",n:"Sambal 100 gr",p:10000}]}
+];
+var cart={},all={};
+var rp=function(n){return "Rp "+n.toLocaleString("id-ID")};
+var $=function(i){return document.getElementById(i)};
+var m=$("menu");
+MENU.forEach(function(g){
+ var h=document.createElement("h2");h.textContent=g.t;m.appendChild(h);
+ if(g.s){var s=document.createElement("p");s.className="sub";s.textContent=g.s;m.appendChild(s)}
+ g.i.forEach(function(x){
+  all[x.id]=x;
+  var d=document.createElement("div");d.className="item";
+  d.innerHTML='<div><b>'+x.n+'</b><span>'+rp(x.p)+'</span></div><div class="qty"><button aria-label="Kurangi '+x.n+'" data-d="-1" data-id="'+x.id+'" hidden>−</button><output id="q'+x.id+'" hidden>0</output><button class="add" aria-label="Tambah '+x.n+'" data-d="1" data-id="'+x.id+'">+</button></div>';
+  m.appendChild(d);
+ });
+});
+function render(){
+ var c=0,t=0,h="";
+ Object.keys(cart).forEach(function(k){if(cart[k]>0){c+=cart[k];t+=cart[k]*all[k].p;h+='<div class="line"><span>'+cart[k]+'× '+all[k].n+'</span><span>'+rp(cart[k]*all[k].p)+'</span></div>'}});
+ Object.keys(all).forEach(function(k){var q=cart[k]||0;$("q"+k).textContent=q;$("q"+k).hidden=!q;document.querySelector('button[data-d="-1"][data-id="'+k+'"]').hidden=!q});
+ $("count").textContent=c?c+" item":"Keranjang kosong";$("sum").textContent=rp(t);$("open").disabled=!c;
+ $("lines").innerHTML=h+'<div class="line total"><span>Total</span><span>'+rp(t)+'</span></div>';
+ return t;
+}
+m.addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;var id=b.dataset.id;cart[id]=Math.max(0,(cart[id]||0)+Number(b.dataset.d));render()});
+$("open").onclick=function(){var n=new Date();n.setMinutes(n.getMinutes()-n.getTimezoneOffset());$("dt").min=n.toISOString().slice(0,16);$("dlg").showModal()};
+$("close").onclick=function(){$("dlg").close()};
+document.querySelectorAll('input[name="m"]').forEach(function(r){r.onchange=function(){$("addrw").hidden=document.querySelector('input[name="m"]:checked').value!=="Antar"}});
+$("send").onclick=function(){
+ var nm=$("nm").value.trim(),ph=$("ph").value.trim(),mode=document.querySelector('input[name="m"]:checked').value,ad=$("ad").value.trim(),rn=$("rn").value.trim(),rtel=$("rt").value.trim(),dt=$("dt").value;
+ if(!nm||!ph){$("err").textContent="Isi nama dan nomor WhatsApp.";return}
+ if(mode==="Antar"){if(!rn||!rtel){$("err").textContent="Isi nama dan nomor telepon penerima.";return}if(!ad){$("err").textContent="Isi alamat pengantaran.";return}if(document.querySelector('input[name="tm"]:checked').value==="Jadwalkan"){if(!dt){$("err").textContent="Pilih tanggal dan jam berangkat dari outlet.";return}if(new Date(dt)<new Date()){$("err").textContent="Waktu berangkat sudah lewat. Pilih waktu berikutnya.";return}}}
+ var t=render(),L=["Halo Rice Campur, saya mau pesan:",""];
+ Object.keys(cart).forEach(function(k){if(cart[k]>0)L.push(cart[k]+"x "+all[k].n+" – "+rp(cart[k]*all[k].p))});
+ L.push("","Total: "+rp(t),"Nama: "+nm,"WhatsApp: "+ph,"Metode: "+mode);
+ if(mode==="Antar")L.push("Penerima: "+rn,"Telepon penerima: "+rtel,"Alamat: "+ad,"Berangkat dari outlet: "+(document.querySelector('input[name="tm"]:checked').value==="Segera"?"Segera":new Date(dt).toLocaleString("id-ID",{dateStyle:"full",timeStyle:"short"})));
+ if($("nt").value.trim())L.push("Catatan: "+$("nt").value.trim());
+ $("err").textContent="";var msg=L.join("\n"),url="https://wa.me/"+WA+"?text="+encodeURIComponent(msg);$("wl").href=url;$("mt").value=msg;$("fb").hidden=false;$("fb").scrollIntoView({block:"nearest"});try{window.open(url,"_blank")}catch(x){}
+};
+document.querySelectorAll('input[name="tm"]').forEach(function(r){r.onchange=function(){$("dtw").hidden=document.querySelector('input[name="tm"]:checked').value!=="Jadwalkan"}});
+$("cp").onclick=function(){var t=$("mt");t.select();try{navigator.clipboard.writeText(t.value)}catch(x){}try{document.execCommand("copy")}catch(x){}$("cp").textContent="Tersalin"};
+render();
+</script>
+</body>
+</html>
